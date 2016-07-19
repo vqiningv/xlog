@@ -189,7 +189,7 @@ func (s *tSeverity) Set(value string) error {
 		}
 		threshold = severity(v)
 	}
-	logging.tSeverity.set(threshold)
+	logging.tSeverity.set(threshold.totSeverity())
 	return nil
 }
 
@@ -454,7 +454,7 @@ func init() {
 	//bind tSeverity
 	flag.Var(&logging.tSeverity,"log_above","logs under this threshhold severity will not be output,e.g.'INFO'")
 	// Default log above INFO level(inclusive).
-	logging.tSeverity = infoLog
+	logging.tSeverity = infoLog.totSeverity()
 	// Default rotate logs daily
 	flag.BoolVar(&logging.rotateDaily, "rotate_daily", true, "whether to rotate log daily(combined with size-based rotation),default true")
 	logging.rotateDaily = true
@@ -717,7 +717,7 @@ func (buf *buffer) someDigits(i, d int) int {
 
 func (l *loggingT) println(s severity, args ...interface{}) {
 	//output only when severity > tSeverity
-	if s < l.tSeverity{
+	if int32(s) < int32(l.tSeverity){
 		return
 	}
 
@@ -728,7 +728,7 @@ func (l *loggingT) println(s severity, args ...interface{}) {
 
 func (l *loggingT) print(s severity, args ...interface{}) {
 	//output only when severity > tSeverity
-	if s < l.tSeverity{
+	if int32(s) < int32(l.tSeverity){
 		return
 	}
 
@@ -737,7 +737,7 @@ func (l *loggingT) print(s severity, args ...interface{}) {
 
 func (l *loggingT) printDepth(s severity, depth int, args ...interface{}) {
 	//output only when severity > tSeverity
-	if s < l.tSeverity{
+	if int32(s) < int32(l.tSeverity){
 		return
 	}
 
@@ -754,7 +754,7 @@ func (l *loggingT) printDepth(s severity, depth int, args ...interface{}) {
 
 func (l *loggingT) printf(s severity, format string, args ...interface{}) {
 	//output only when severity > tSeverity
-	if s < l.tSeverity{
+	if int32(s) < int32(l.tSeverity){
 		return
 	}
 
@@ -771,7 +771,7 @@ func (l *loggingT) printf(s severity, format string, args ...interface{}) {
 // will also appear in the log file unless --logtostderr is set.
 func (l *loggingT) printWithFileLine(s severity, file string, line int, alsoToStderr bool, args ...interface{}) {
 	//output only when severity > tSeverity
-	if s < l.tSeverity{
+	if int32(s) < int32(l.tSeverity){
 		return
 	}
 
@@ -1360,7 +1360,12 @@ func Exitf(format string, args ...interface{}) {
 
 // -------------enhancement starts-------------------
 
-
+//convert severity to tSeverity
+func (s severity) totSeverity() tSeverity{
+	var ts *tSeverity
+	atomic.StoreInt32((*int32)(ts), int32(s))
+	return *ts
+}
 
 //Once set, logs under the threshhold severity will not be output.
 //The character case is ignored in tLevel string(only letter comparison);accept "debug","INFO","Error" etc.
@@ -1370,7 +1375,7 @@ func SetOutputThreshholdLevel(tLevel string){
 		//severity already defaults to 0
 		panic(fmt.Sprintf("xlog.SetOutputThreshholdLevel(%q): unrecognized severity name", tLevel))
 	}
-	logging.tSeverity = severity
+	logging.tSeverity = severity.totSeverity()
 }
 
 // -------------enhancement end----------------------
