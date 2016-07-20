@@ -1251,7 +1251,7 @@ func Infof(format string, args ...interface{}) {
 	logging.printf(infoLog, format, args...)
 }
 
-// Warning logs to the WARNING and INFO logs.
+// Warning logs to the WARNING logs.
 // Arguments are handled in the manner of fmt.Print; a newline is appended if missing.
 func Warning(args ...interface{}) {
 	logging.print(warningLog, args...)
@@ -1263,19 +1263,19 @@ func WarningDepth(depth int, args ...interface{}) {
 	logging.printDepth(warningLog, depth, args...)
 }
 
-// Warningln logs to the WARNING and INFO logs.
+// Warningln logs to the WARNING logs.
 // Arguments are handled in the manner of fmt.Println; a newline is appended if missing.
 func Warningln(args ...interface{}) {
 	logging.println(warningLog, args...)
 }
 
-// Warningf logs to the WARNING and INFO logs.
+// Warningf logs to the WARNING logs.
 // Arguments are handled in the manner of fmt.Printf; a newline is appended if missing.
 func Warningf(format string, args ...interface{}) {
 	logging.printf(warningLog, format, args...)
 }
 
-// Error logs to the ERROR, WARNING, and INFO logs.
+// Error logs to the ERROR logs.
 // Arguments are handled in the manner of fmt.Print; a newline is appended if missing.
 func Error(args ...interface{}) {
 	logging.print(errorLog, args...)
@@ -1287,19 +1287,19 @@ func ErrorDepth(depth int, args ...interface{}) {
 	logging.printDepth(errorLog, depth, args...)
 }
 
-// Errorln logs to the ERROR, WARNING, and INFO logs.
+// Errorln logs to the ERROR logs.
 // Arguments are handled in the manner of fmt.Println; a newline is appended if missing.
 func Errorln(args ...interface{}) {
 	logging.println(errorLog, args...)
 }
 
-// Errorf logs to the ERROR, WARNING, and INFO logs.
+// Errorf logs to the ERROR logs.
 // Arguments are handled in the manner of fmt.Printf; a newline is appended if missing.
 func Errorf(format string, args ...interface{}) {
 	logging.printf(errorLog, format, args...)
 }
 
-// Fatal logs to the FATAL, ERROR, WARNING, and INFO logs,
+// Fatal logs to the FATAL logs,
 // including a stack trace of all running goroutines, then calls os.Exit(255).
 // Arguments are handled in the manner of fmt.Print; a newline is appended if missing.
 func Fatal(args ...interface{}) {
@@ -1312,14 +1312,14 @@ func FatalDepth(depth int, args ...interface{}) {
 	logging.printDepth(fatalLog, depth, args...)
 }
 
-// Fatalln logs to the FATAL, ERROR, WARNING, and INFO logs,
+// Fatalln logs to the FATAL logs,
 // including a stack trace of all running goroutines, then calls os.Exit(255).
 // Arguments are handled in the manner of fmt.Println; a newline is appended if missing.
 func Fatalln(args ...interface{}) {
 	logging.println(fatalLog, args...)
 }
 
-// Fatalf logs to the FATAL, ERROR, WARNING, and INFO logs,
+// Fatalf logs to the FATAL logs,
 // including a stack trace of all running goroutines, then calls os.Exit(255).
 // Arguments are handled in the manner of fmt.Printf; a newline is appended if missing.
 func Fatalf(format string, args ...interface{}) {
@@ -1330,7 +1330,7 @@ func Fatalf(format string, args ...interface{}) {
 // It allows Exit and relatives to use the Fatal logs.
 var fatalNoStacks uint32
 
-// Exit logs to the FATAL, ERROR, WARNING, and INFO logs, then calls os.Exit(1).
+// Exit logs to the FATAL logs, then calls os.Exit(1).
 // Arguments are handled in the manner of fmt.Print; a newline is appended if missing.
 func Exit(args ...interface{}) {
 	atomic.StoreUint32(&fatalNoStacks, 1)
@@ -1344,13 +1344,13 @@ func ExitDepth(depth int, args ...interface{}) {
 	logging.printDepth(fatalLog, depth, args...)
 }
 
-// Exitln logs to the FATAL, ERROR, WARNING, and INFO logs, then calls os.Exit(1).
+// Exitln logs to the FATAL logs, then calls os.Exit(1).
 func Exitln(args ...interface{}) {
 	atomic.StoreUint32(&fatalNoStacks, 1)
 	logging.println(fatalLog, args...)
 }
 
-// Exitf logs to the FATAL, ERROR, WARNING, and INFO logs, then calls os.Exit(1).
+// Exitf logs to the FATAL logs, then calls os.Exit(1).
 // Arguments are handled in the manner of fmt.Printf; a newline is appended if missing.
 func Exitf(format string, args ...interface{}) {
 	atomic.StoreUint32(&fatalNoStacks, 1)
@@ -1362,9 +1362,7 @@ func Exitf(format string, args ...interface{}) {
 
 //convert severity to tSeverity
 func (s severity) totSeverity() tSeverity{
-	var ts *tSeverity
-	atomic.StoreInt32((*int32)(ts), int32(s))
-	return *ts
+	return tSeverity(int32(s))
 }
 
 //Once set, logs under the threshhold severity will not be output.
