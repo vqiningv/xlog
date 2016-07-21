@@ -1015,7 +1015,9 @@ func (l *loggingT) createFiles(sev severity) error {
 	now := time.Now()
 	// Files are created in decreasing severity order, so as soon as we find one
 	// has already been created, we can stop.
-	for s := sev; s >= debugLog && l.file[s] == nil; s-- {
+	// NOTE: only create log file with a severity level equal or
+	// higher than threshhold severity(i.e. loggingT.tSeverity)
+	for s := sev; s >= debugLog && s.totSeverity()>= l.tSeverity && l.file[s] == nil; s-- {
 		sb := &syncBuffer{
 			logger: l,
 			sev:    s,
