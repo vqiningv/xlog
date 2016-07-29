@@ -1,4 +1,4 @@
-// Package xlog provides functions Info, Warning, Error, Fatal, plus formatting variants such as
+// Package xlog provides functions Debug, Info, Warning, Error, Fatal, plus formatting variants such as
 // Infof. It also provides V-style logging controlled by the -v and -vmodule=file=2 flags.
 
 //
@@ -189,7 +189,7 @@ func (s *tSeverity) Set(value string) error {
 		}
 		threshold = severity(v)
 	}
-	logging.tSeverity.set(threshold.totSeverity())
+	logging.tSeverity.set(threshold)
 	return nil
 }
 
@@ -454,7 +454,7 @@ func init() {
 	//bind tSeverity
 	flag.Var(&logging.tSeverity,"log_above","logs under this threshhold severity will not be output,e.g.'INFO'")
 	// Default log above INFO level(inclusive).
-	logging.tSeverity = infoLog.totSeverity()
+	logging.tSeverity = infoLog
 	// Default rotate logs daily
 	flag.BoolVar(&logging.rotateDaily, "rotate_daily", true, "whether to rotate log daily(combined with size-based rotation),default true")
 	logging.rotateDaily = true
@@ -717,7 +717,7 @@ func (buf *buffer) someDigits(i, d int) int {
 
 func (l *loggingT) println(s severity, args ...interface{}) {
 	//output only when severity > tSeverity
-	if int32(s) < int32(l.tSeverity){
+	if s < l.tSeverity{
 		return
 	}
 
@@ -728,7 +728,7 @@ func (l *loggingT) println(s severity, args ...interface{}) {
 
 func (l *loggingT) print(s severity, args ...interface{}) {
 	//output only when severity > tSeverity
-	if int32(s) < int32(l.tSeverity){
+	if s < l.tSeverity{
 		return
 	}
 
@@ -737,7 +737,7 @@ func (l *loggingT) print(s severity, args ...interface{}) {
 
 func (l *loggingT) printDepth(s severity, depth int, args ...interface{}) {
 	//output only when severity > tSeverity
-	if int32(s) < int32(l.tSeverity){
+	if s < l.tSeverity{
 		return
 	}
 
@@ -754,7 +754,7 @@ func (l *loggingT) printDepth(s severity, depth int, args ...interface{}) {
 
 func (l *loggingT) printf(s severity, format string, args ...interface{}) {
 	//output only when severity > tSeverity
-	if int32(s) < int32(l.tSeverity){
+	if s < l.tSeverity{
 		return
 	}
 
@@ -771,7 +771,7 @@ func (l *loggingT) printf(s severity, format string, args ...interface{}) {
 // will also appear in the log file unless --logtostderr is set.
 func (l *loggingT) printWithFileLine(s severity, file string, line int, alsoToStderr bool, args ...interface{}) {
 	//output only when severity > tSeverity
-	if int32(s) < int32(l.tSeverity){
+	if s < l.tSeverity{
 		return
 	}
 
@@ -1015,9 +1015,7 @@ func (l *loggingT) createFiles(sev severity) error {
 	now := time.Now()
 	// Files are created in decreasing severity order, so as soon as we find one
 	// has already been created, we can stop.
-	// NOTE: only create log file with a severity level equal or
-	// higher than threshhold severity(i.e. loggingT.tSeverity)
-	for s := sev; s >= debugLog && s.totSeverity()>= l.tSeverity && l.file[s] == nil; s-- {
+	for s := sev; s >= debugLog && l.file[s] == nil; s-- {
 		sb := &syncBuffer{
 			logger: l,
 			sev:    s,
@@ -1253,7 +1251,7 @@ func Infof(format string, args ...interface{}) {
 	logging.printf(infoLog, format, args...)
 }
 
-// Warning logs to the WARNING logs.
+// Warning logs to the WARNING and INFO logs.
 // Arguments are handled in the manner of fmt.Print; a newline is appended if missing.
 func Warning(args ...interface{}) {
 	logging.print(warningLog, args...)
@@ -1265,19 +1263,19 @@ func WarningDepth(depth int, args ...interface{}) {
 	logging.printDepth(warningLog, depth, args...)
 }
 
-// Warningln logs to the WARNING logs.
+// Warningln logs to the WARNING and INFO logs.
 // Arguments are handled in the manner of fmt.Println; a newline is appended if missing.
 func Warningln(args ...interface{}) {
 	logging.println(warningLog, args...)
 }
 
-// Warningf logs to the WARNING logs.
+// Warningf logs to the WARNING and INFO logs.
 // Arguments are handled in the manner of fmt.Printf; a newline is appended if missing.
 func Warningf(format string, args ...interface{}) {
 	logging.printf(warningLog, format, args...)
 }
 
-// Error logs to the ERROR logs.
+// Error logs to the ERROR, WARNING, and INFO logs.
 // Arguments are handled in the manner of fmt.Print; a newline is appended if missing.
 func Error(args ...interface{}) {
 	logging.print(errorLog, args...)
@@ -1289,19 +1287,19 @@ func ErrorDepth(depth int, args ...interface{}) {
 	logging.printDepth(errorLog, depth, args...)
 }
 
-// Errorln logs to the ERROR logs.
+// Errorln logs to the ERROR, WARNING, and INFO logs.
 // Arguments are handled in the manner of fmt.Println; a newline is appended if missing.
 func Errorln(args ...interface{}) {
 	logging.println(errorLog, args...)
 }
 
-// Errorf logs to the ERROR logs.
+// Errorf logs to the ERROR, WARNING, and INFO logs.
 // Arguments are handled in the manner of fmt.Printf; a newline is appended if missing.
 func Errorf(format string, args ...interface{}) {
 	logging.printf(errorLog, format, args...)
 }
 
-// Fatal logs to the FATAL logs,
+// Fatal logs to the FATAL, ERROR, WARNING, and INFO logs,
 // including a stack trace of all running goroutines, then calls os.Exit(255).
 // Arguments are handled in the manner of fmt.Print; a newline is appended if missing.
 func Fatal(args ...interface{}) {
@@ -1314,14 +1312,14 @@ func FatalDepth(depth int, args ...interface{}) {
 	logging.printDepth(fatalLog, depth, args...)
 }
 
-// Fatalln logs to the FATAL logs,
+// Fatalln logs to the FATAL, ERROR, WARNING, and INFO logs,
 // including a stack trace of all running goroutines, then calls os.Exit(255).
 // Arguments are handled in the manner of fmt.Println; a newline is appended if missing.
 func Fatalln(args ...interface{}) {
 	logging.println(fatalLog, args...)
 }
 
-// Fatalf logs to the FATAL logs,
+// Fatalf logs to the FATAL, ERROR, WARNING, and INFO logs,
 // including a stack trace of all running goroutines, then calls os.Exit(255).
 // Arguments are handled in the manner of fmt.Printf; a newline is appended if missing.
 func Fatalf(format string, args ...interface{}) {
@@ -1332,7 +1330,7 @@ func Fatalf(format string, args ...interface{}) {
 // It allows Exit and relatives to use the Fatal logs.
 var fatalNoStacks uint32
 
-// Exit logs to the FATAL logs, then calls os.Exit(1).
+// Exit logs to the FATAL, ERROR, WARNING, and INFO logs, then calls os.Exit(1).
 // Arguments are handled in the manner of fmt.Print; a newline is appended if missing.
 func Exit(args ...interface{}) {
 	atomic.StoreUint32(&fatalNoStacks, 1)
@@ -1346,26 +1344,19 @@ func ExitDepth(depth int, args ...interface{}) {
 	logging.printDepth(fatalLog, depth, args...)
 }
 
-// Exitln logs to the FATAL logs, then calls os.Exit(1).
+// Exitln logs to the FATAL, ERROR, WARNING, and INFO logs, then calls os.Exit(1).
 func Exitln(args ...interface{}) {
 	atomic.StoreUint32(&fatalNoStacks, 1)
 	logging.println(fatalLog, args...)
 }
 
-// Exitf logs to the FATAL logs, then calls os.Exit(1).
+// Exitf logs to the FATAL, ERROR, WARNING, and INFO logs, then calls os.Exit(1).
 // Arguments are handled in the manner of fmt.Printf; a newline is appended if missing.
 func Exitf(format string, args ...interface{}) {
 	atomic.StoreUint32(&fatalNoStacks, 1)
 	logging.printf(fatalLog, format, args...)
 }
 
-
-// -------------enhancement starts-------------------
-
-//convert severity to tSeverity
-func (s severity) totSeverity() tSeverity{
-	return tSeverity(int32(s))
-}
 
 //Once set, logs under the threshhold severity will not be output.
 //The character case is ignored in tLevel string(only letter comparison);accept "debug","INFO","Error" etc.
@@ -1375,7 +1366,5 @@ func SetOutputThreshholdLevel(tLevel string){
 		//severity already defaults to 0
 		panic(fmt.Sprintf("xlog.SetOutputThreshholdLevel(%q): unrecognized severity name", tLevel))
 	}
-	logging.tSeverity = severity.totSeverity()
+	logging.tSeverity = severity
 }
-
-// -------------enhancement end----------------------
