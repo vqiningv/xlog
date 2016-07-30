@@ -153,46 +153,6 @@ func (s *severity) Set(value string) error {
 	return nil
 }
 
-//tSeverity is just like severity, only it represents the setting of the -log_above flag.
-type tSeverity int32 // sync/atomic int32
-
-// get returns the value of the tSeverity.
-func (s *tSeverity) get() tSeverity {
-	return tSeverity(atomic.LoadInt32((*int32)(s)))
-}
-
-// set sets the value of the tSeverity.
-func (s *tSeverity) set(val tSeverity) {
-	atomic.StoreInt32((*int32)(s), int32(val))
-}
-
-// String is part of the flag.Value interface.
-func (s *tSeverity) String() string {
-	return strconv.FormatInt(int64(*s), 10)
-}
-
-// Get is part of the flag.Value interface.
-func (s *tSeverity) Get() interface{} {
-	return *s
-}
-
-// Set is part of the flag.Value interface.
-func (s *tSeverity) Set(value string) error {
-	var threshold severity
-	// Is it a known name?
-	if v, ok := severityByName(value); ok {
-		threshold = v
-	} else {
-		v, err := strconv.Atoi(value)
-		if err != nil {
-			return err
-		}
-		threshold = severity(v)
-	}
-	logging.tSeverity.set(threshold)
-	return nil
-}
-
 //parse severity from a string; character case will not make a difference
 func severityByName(s string) (severity, bool) {
 	s = strings.ToUpper(s)
@@ -512,7 +472,7 @@ type loggingT struct {
 	verbosity Level      // V logging level, the value of the -v flag/
 
 	//tSeverity represents the output threshhold severity, logs under this severity will not be output
-	tSeverity tSeverity
+	tSeverity severity
 
 	//a bool to indicate whether to rotate log daily, defaults to true
 	rotateDaily bool // The -rotateDaily flag.
@@ -1063,7 +1023,7 @@ func (l *loggingT) flushAll() {
 // severities.  Subsequent changes to the standard log's default output location
 // or format may break this behavior.
 //
-// Valid names are "INFO", "WARNING", "ERROR", and "FATAL".  If the name is not
+// Valid names are "DEBUG","INFO", "WARNING", "ERROR", and "FATAL".  If the name is not
 // recognized, CopyStandardLogTo panics.
 func CopyStandardLogTo(name string) {
 	sev, ok := severityByName(name)
